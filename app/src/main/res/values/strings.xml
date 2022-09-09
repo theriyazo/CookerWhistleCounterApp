@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Cooker Whistle Counter</string>
+    <string name="action_settings">Settings</string>
+    <string name="current_whistle_count">Current Whistle Count</string>
+    <string name="set_num_of_whistles">Set Num of Whistles</string>
+    <string name="reset">Start</string>
+    <string name="status">Stats</string>
+    <string name="_6">6</string>
+    <string name="_0">0</string>
+</resources>
