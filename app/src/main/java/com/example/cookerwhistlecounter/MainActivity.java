@@ -5,26 +5,34 @@ import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.design.widget.FloatingActionButton;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Layout;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.Objects;
-
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "RIYAZ";
     private SoundMeter sm;
     private Thread thread;
     private static boolean isMicRecStoped = false;
     private static final int SAMPLE_DELAY = 160;
     private boolean micRecording = false;
     private MediaPlayer player;
+    private int previousWhistleCount = 0;
+    TextView av;
+    ConstraintLayout alert;
+    TextView alertMsg;
+
+    int whistleCount;
     TextView amp;
     TextView freq;
     TextView samp;
@@ -46,8 +54,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         checkRecordPermission();
-        player = MediaPlayer.create(this,
-                Settings.System.DEFAULT_RINGTONE_URI);
+        player = MediaPlayer.create(this, R.raw.alert_sound);
+        player.setLooping(true);
 
 //        FloatingActionButton fab = findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {
@@ -57,6 +65,10 @@ public class MainActivity extends AppCompatActivity {
 //                        .setAction("Action", null).show();
 //            }
 //        });
+        alertMsg = findViewById(R.id.alertMessage);
+        alert = findViewById(R.id.alert);
+        av = findViewById(R.id.whistleCount);
+        whistleCount = Integer.parseInt(av.getText().toString());
         amp = findViewById(R.id.amp);
         freq = findViewById(R.id.freq);
         samp = findViewById(R.id.samp);
@@ -97,22 +109,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void incrementWhistleCount() {
-        TextView av = findViewById(R.id.whistleCount);
         if(av == null) {
             return;
         }
-        int whistleCount = Integer.parseInt(av.getText().toString());
         whistleCount++;
+        Log.d(TAG, "Inside IncrementWhistleCount(), whistleCount ="+whistleCount);
         av.setText(String.valueOf(whistleCount));
         if(whistleCount >= getUserRequestedCount()) {
             if(!player.isPlaying()) {
                 player.start();
-                try{
-                    Snackbar.make(getWindow().getCurrentFocus(), "Replace with your own action", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                } catch (Exception e){
-                    e.printStackTrace();
-                }
+                alertMsg.setText("Turn Off Cooker it’s "+whistleCount+" Whistles");
+                alert.setVisibility(View.VISIBLE);
+
+//                try{
+//                    Snackbar.make(getWindow().getCurrentFocus(), "Replace with your own action", Snackbar.LENGTH_LONG)
+//                            .setAction("Action", null).show();
+//                } catch (Exception e){
+//                    e.printStackTrace();
+//                }
 
             }
         }
@@ -128,6 +142,8 @@ public class MainActivity extends AppCompatActivity {
             miss_cnt++;
             if(miss_cnt > 3) {
                 if(samp_cnt > 10) {
+                    Log.d(TAG, "Inside handleSample(), whistleCount ="+whistleCount+1+"| With miss count = "+miss_cnt+" & samp count = "+samp_cnt);
+
                     incrementWhistleCount();
                 }
                 samp_cnt = 0;
@@ -155,10 +171,10 @@ public class MainActivity extends AppCompatActivity {
                                 double amplitude = sm.getAmplitude();
                                 handleSample(amplitude, sm.freq);
 
-                                amp.setText("amp = " + String.valueOf(amplitude));
-                                freq.setText("freq = " + String.valueOf(sm.freq));
-                                samp.setText("samp = " + String.valueOf(samp_cnt));
-                                miss.setText("miss = " + String.valueOf(miss_cnt));
+                                amp.setText("amp = " + amplitude);
+                                freq.setText("freq = " + sm.freq);
+                                samp.setText("samp = " + samp_cnt);
+                                miss.setText("miss = " + miss_cnt);
 
 //                                av.setText("amplitude = " + String.valueOf(amplitude) +
 //                                        " freq = " + String.valueOf(sm.freq) +
@@ -201,8 +217,15 @@ public class MainActivity extends AppCompatActivity {
 
             samp_cnt = 0;
             miss_cnt = 0;
-            samp.setText("samp = " + String.valueOf(samp_cnt));
-            miss.setText("miss = " + String.valueOf(miss_cnt));
+            previousWhistleCount = whistleCount;
+            whistleCount = 0;
+            alert.setVisibility(View.GONE);
+
+            av.setText(String.valueOf(whistleCount));
+            TextView whistleCountView = findViewById(R.id.previousWhistleCount);
+            whistleCountView.setText("Previous Whistle Count = "+ previousWhistleCount);
+            samp.setText("samp = " + samp_cnt);
+            miss.setText("miss = " + miss_cnt);
             if(player.isPlaying()) {
                 player.pause();
             }
